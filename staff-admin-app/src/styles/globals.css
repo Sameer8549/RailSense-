@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Light mode: Premium Slate & Cyan ── */
+    --background:   220 20% 97%;
+    --foreground:   224 40% 12%;
+    --card:         0 0% 100%;
+    --card-foreground: 224 40% 12%;
+    --popover:      0 0% 100%;
+    --popover-foreground: 224 40% 12%;
+    --primary:      240 90% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary:    220 14% 92%;
+    --secondary-foreground: 224 40% 20%;
+    --muted:        220 14% 92%;
+    --muted-foreground: 220 14% 46%;
+    --accent:       240 90% 94%;
+    --accent-foreground: 240 90% 40%;
+    --destructive:  348 83% 54%;
+    --destructive-foreground: 0 0% 100%;
+    --border:       220 14% 88%;
+    --input:        220 14% 88%;
+    --ring:         240 90% 50%;
+    --radius:       0.75rem;
+
+    --sidebar-background:           224 40% 12%;
+    --sidebar-foreground:           220 14% 92%;
+    --sidebar-primary:              240 90% 60%;
+    --sidebar-primary-foreground:   0 0% 100%;
+    --sidebar-accent:               224 40% 18%;
+    --sidebar-accent-foreground:    220 14% 96%;
+    --sidebar-border:               224 40% 16%;
+    --sidebar-ring:                 240 90% 60%;
+
+    --severity-high:   348 83% 54%;
+    --severity-medium: 32 95% 48%;
+    --severity-low:    148 56% 40%;
+
+    --chart-1: 240 90% 50%;
+    --chart-2: 348 83% 54%;
+    --chart-3: 32 95% 48%;
+    --chart-4: 148 56% 40%;
+    --chart-5: 270 65% 52%;
+  }
+
+  .dark {
+    /* ── Dark mode: Deep Indigo / Slate ── */
+    --background:   224 40% 6%;
+    --foreground:   220 14% 96%;
+    --card:         224 40% 9%;
+    --card-foreground: 220 14% 96%;
+    --popover:      224 40% 9%;
+    --popover-foreground: 220 14% 96%;
+    --primary:      240 90% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary:    224 40% 14%;
+    --secondary-foreground: 220 14% 90%;
+    --muted:        224 40% 14%;
+    --muted-foreground: 220 14% 60%;
+    --accent:       240 90% 20%;
+    --accent-foreground: 240 90% 80%;
+    --destructive:  348 83% 54%;
+    --destructive-foreground: 0 0% 100%;
+    --border:       224 40% 16%;
+    --input:        224 40% 16%;
+    --ring:         240 90% 65%;
+
+    --sidebar-background:           224 40% 4%;
+    --sidebar-foreground:           220 14% 92%;
+    --sidebar-primary:              240 90% 65%;
+    --sidebar-primary-foreground:   0 0% 100%;
+    --sidebar-accent:               224 40% 12%;
+    --sidebar-accent-foreground:    220 14% 96%;
+    --sidebar-border:               224 40% 10%;
+    --sidebar-ring:                 240 90% 65%;
+
+    --severity-high:   348 83% 60%;
+    --severity-medium: 32 95% 55%;
+    --severity-low:    148 50% 50%;
+
+    --chart-1: 240 90% 65%;
+    --chart-2: 348 83% 60%;
+    --chart-3: 32 95% 55%;
+    --chart-4: 148 50% 50%;
+    --chart-5: 270 60% 66%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6, .font-display, .tracking-tight {
+    font-family: "Outfit", system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+
+/* Shimmer animation for skeleton */
+.skeleton {
+  background: linear-gradient(90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--secondary)) 50%,
+    hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .skeleton { animation: none; }
+}
+
+
+/* --- Print Styles for PDF Export --- */
+@media print {
+  /* Hide the entire app shell and normal UI during print */
+  body > #root > div:not(.print-report-container) {
+    display: none !important;
+  }
+  
+  /* Reset background for body */
+  body {
+    background-color: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Make the printable report visible and take up full page */
+  .print-report-container {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+    visibility: visible;
+  }
+  
+  .print-exact {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Page margins and orientation */
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+}
