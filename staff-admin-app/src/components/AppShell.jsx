@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -92,7 +92,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onClose }) {
         {/* Brand mark — always visible */}
         <div className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-border">
-            <div className="w-7 h-7 bg-sidebar-foreground" style={{ maskImage: "url(/logo.png)", WebkitMaskImage: "url(/logo.png)", maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center" }} />
+            <div className="w-7 h-7 bg-sidebar-foreground" style={{ maskImage: "url(/app/staff/logo.png)", WebkitMaskImage: "url(/app/staff/logo.png)", maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center" }} />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex flex-col justify-center">
@@ -174,6 +174,15 @@ export function AppShell({ children, onCommandOpen }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const session = useStaffStore((s) => s.session);
+  const liveStatus = useStaffStore((s) => s.liveStatus);
+  const lastUpdatedAt = useStaffStore((s) => s.lastUpdatedAt);
+  const lastUpdatedLabel = useMemo(() => {
+    if (!lastUpdatedAt) return "Sync pending";
+    const seconds = Math.max(0, Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 1000));
+    if (seconds < 5) return "Updated now";
+    if (seconds < 60) return `Updated ${seconds}s ago`;
+    return `Updated ${Math.floor(seconds / 60)}m ago`;
+  }, [lastUpdatedAt]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background selection:bg-primary/30">
@@ -226,6 +235,11 @@ export function AppShell({ children, onCommandOpen }) {
 
           <div className="flex-1" />
 
+          <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <span className={cn("h-2 w-2 rounded-full", liveStatus === "error" ? "bg-red-500" : "bg-green-500")} />
+            {lastUpdatedLabel}
+          </div>
+
           {/* Command palette trigger */}
           <button type="button" onClick={onCommandOpen}
             className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-black/5 hover:bg-card hover:bg-muted transition-all w-64 justify-between shadow-inner">
@@ -261,9 +275,4 @@ export function AppShell({ children, onCommandOpen }) {
     </div>
   );
 }
-
-
-
-
-
 

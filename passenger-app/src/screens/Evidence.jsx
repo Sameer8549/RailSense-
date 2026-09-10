@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Camera, ArrowRight, X } from "@phosphor-icons/react";
 import { useI18n } from "../i18n/I18nContext.jsx";
 import { useAppStore } from "../store/appStore.js";
+import { imageFileToUploadDataUrl } from "../lib/imageUpload.js";
 
 export default function Evidence() {
   const { t } = useI18n();
@@ -12,21 +13,25 @@ export default function Evidence() {
   const fileRef = useRef(null);
   const [photoPreview, setPhotoPreview] = useState(null);
 
-  function handlePhoto(e) {
+  async function handlePhoto(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPhotoPreview(url);
-    updateDraft({ photoEvidence: url });
+    try {
+      const dataUrl = await imageFileToUploadDataUrl(file, { maxDimension: 1280, quality: 0.76 });
+      setPhotoPreview(dataUrl);
+      updateDraft({ photoEvidence: dataUrl, evidencePhotoBase64: dataUrl });
+    } finally {
+      e.target.value = "";
+    }
   }
 
   function handleClear() {
     setPhotoPreview(null);
-    updateDraft({ photoEvidence: null });
+    updateDraft({ photoEvidence: null, evidencePhotoBase64: null });
   }
 
   function handleContinue(withPhoto) {
-    if (!withPhoto) updateDraft({ photoEvidence: null });
+    if (!withPhoto) updateDraft({ photoEvidence: null, evidencePhotoBase64: null });
     navigate("/confirm");
   }
 

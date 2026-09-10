@@ -73,6 +73,7 @@ function Txta({ placeholder, value, onChange, rows = 2 }) {
 function TTEActionBar({ inc }) {
   const submitAction = useStaffStore((s) => s.submitAction);
   const actionStatus = useStaffStore((s) => s.actionStatus);
+  const actionError = useStaffStore((s) => s.actionError);
   const [note, setNote] = useState("");
   const [dupReason, setDupReason] = useState("");
   const [showNote, setShowNote] = useState(false);
@@ -169,6 +170,7 @@ function TTEActionBar({ inc }) {
           <ChevronDown className="w-3.5 h-3.5" /> Add note
         </button>
       </div>
+      {actionError && <p className="px-6 pb-4 text-xs font-semibold text-red-500" role="alert">{actionError}</p>}
     </div>
   );
 }
@@ -179,6 +181,7 @@ function TTEActionBar({ inc }) {
 function AdminActions({ inc }) {
   const submitAction = useStaffStore((s) => s.submitAction);
   const actionStatus = useStaffStore((s) => s.actionStatus);
+  const actionError = useStaffStore((s) => s.actionError);
   const [note, setNote] = useState("");
   const [assignee, setAssignee] = useState("");
   const [mergeId, setMergeId] = useState("");
@@ -271,6 +274,7 @@ function AdminActions({ inc }) {
           <SlidersHorizontal className="w-4 h-4" /> Apply Changes
         </Button>
       </Expand>
+      {actionError && <p className="text-xs font-semibold text-red-500" role="alert">{actionError}</p>}
     </div>
   );
 }
@@ -465,6 +469,11 @@ export default function IncidentBrief({ onClose, fullscreen }) {
                     Recommended Action
                   </div>
                   <p className="text-sm font-bold text-red-600/90 /90 leading-relaxed">{inc.recommendedAction}</p>
+                  {inc.actionPlan?.steps?.length > 0 && (
+                    <ol className="mt-3 space-y-1.5 text-xs font-semibold text-foreground/75 list-decimal list-inside">
+                      {inc.actionPlan.steps.map((step) => <li key={step}>{step}</li>)}
+                    </ol>
+                  )}
                 </div>
               )}
               {inc.relatedIncidents?.length > 0 && (

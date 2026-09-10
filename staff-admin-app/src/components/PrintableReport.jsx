@@ -19,7 +19,7 @@ export function PrintableReport({ incidents }) {
       <div className="flex items-start justify-between border-b-2 border-black pb-6 mb-8">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center print-exact">
-            <div className="w-7 h-7 bg-white" style={{ maskImage: "url(/logo.png)", WebkitMaskImage: "url(/logo.png)", maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center" }} />
+            <div className="w-7 h-7 bg-white" style={{ maskImage: "url(/app/staff/logo.png)", WebkitMaskImage: "url(/app/staff/logo.png)", maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center" }} />
           </div>
           <div>
             <h1 className="text-3xl font-extrabold font-display tracking-tight text-black m-0">RailSense</h1>

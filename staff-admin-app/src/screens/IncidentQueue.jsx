@@ -41,6 +41,7 @@ function SortBtn({ label, col, sorting, onSort }) {
 export default function IncidentQueue() {
   const fetchIncidents = useStaffStore((s) => s.fetchIncidents);
   const getSortedForRole = useStaffStore((s) => s.getSortedForRole);
+  const incidents = useStaffStore((s) => s.incidents);
   const session = useStaffStore((s) => s.session);
   const status = useStaffStore((s) => s.incidentsStatus);
   const selectedId = useStaffStore((s) => s.selectedIncidentId);
@@ -102,14 +103,7 @@ export default function IncidentQueue() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
   
-  // Sync selection with focus when navigating by keyboard
-  useEffect(() => {
-    if (focusedIndex >= 0 && displayRows[focusedIndex] && !displayRows[focusedIndex]._isGroup) {
-        selectIncident(displayRows[focusedIndex].id);
-    }
-  }, [focusedIndex]);
-
-  const raw = useMemo(() => getSortedForRole(session?.role || "tte"), [getSortedForRole, session?.role, status]);
+  const raw = useMemo(() => getSortedForRole(session?.role || "tte"), [getSortedForRole, incidents, session?.role, status]);
 
   // Filtering & Sorting
   const processedIncidents = useMemo(() => {
@@ -264,6 +258,10 @@ export default function IncidentQueue() {
   };
 
   const clearAllFilters = () => setQueueFilter({ search: "", severity: "all", recurringOnly: false, coach: "all", train: "all", status: "open" });
+  const closeBrief = () => {
+    setFocusedIndex(-1);
+    clearSelected();
+  };
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -578,30 +576,20 @@ export default function IncidentQueue() {
         </div>
       </div>
 
-      {/* ── Detail panel — desktop ── */}
-      <AnimatePresence>
-        {hasSelected && (
-          <motion.div key="brief-desktop"
-            initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-            className="hidden lg:flex flex-1 overflow-hidden bg-background shadow-2xl relative z-10"
-          >
-            <IncidentBrief onClose={clearSelected} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* The panel must unmount on close. A deferred exit animation could leave
+          an empty split column after the selection state was already cleared. */}
+      {hasSelected && (
+        <div className="hidden lg:flex flex-1 overflow-hidden bg-background shadow-2xl relative z-10">
+          <IncidentBrief onClose={closeBrief} />
+        </div>
+      )}
 
       {/* ── Mobile fullscreen ── */}
-      <AnimatePresence>
-        {hasSelected && (
-          <motion.div key="brief-mobile"
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-            className="lg:hidden fixed inset-0 z-50 bg-background overflow-auto"
-          >
-            <IncidentBrief onClose={clearSelected} fullscreen />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {hasSelected && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-background overflow-auto">
+          <IncidentBrief onClose={closeBrief} fullscreen />
+        </div>
+      )}
     </div>
   );
 }

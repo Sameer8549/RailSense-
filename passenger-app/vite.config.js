@@ -1,14 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  base: "/app/",
   plugins: [
     react(),
-    tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: {
+        navigateFallbackDenylist: [/^\/app\/staff(?:\/|$)/]
+      },
       manifest: {
         name: "RailSense AI",
         short_name: "RailSense",
@@ -17,10 +19,11 @@ export default defineConfig({
         background_color: "#f4f6fa",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
+        start_url: "/app/",
+        scope: "/app/",
         icons: [
-          { src: "/logo.png", sizes: "192x192", type: "image/png" },
-          { src: "/logo.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+          { src: "/app/logo.png", sizes: "192x192", type: "image/png" },
+          { src: "/app/logo.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
         ]
       }
     })

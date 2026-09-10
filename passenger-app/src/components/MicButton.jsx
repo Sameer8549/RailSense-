@@ -1,6 +1,6 @@
 import { useTransform } from "motion/react";
 import { motion, useReducedMotion } from "motion/react";
-import { Microphone, StopCircle } from "@phosphor-icons/react";
+import { Microphone, StopCircle, SpinnerGap } from "@phosphor-icons/react";
 
 /**
  * Giant mic button with Apple-design pointer-down feedback.
@@ -14,6 +14,7 @@ export default function MicButton({ amplitude, micState, onPointerDown, onStop }
 
   const isListening = micState === "active";
   const isRequesting = micState === "requesting";
+  const isProcessing = micState === "processing";
 
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 120, height: 120 }}>
@@ -48,7 +49,8 @@ export default function MicButton({ amplitude, micState, onPointerDown, onStop }
 
       {/* Main button */}
       <motion.button
-        onPointerDown={isListening ? onStop : onPointerDown}
+        onPointerDown={isProcessing ? undefined : (isListening ? onStop : onPointerDown)}
+        disabled={isProcessing}
         whileTap={!reduced ? { scale: 0.93 } : undefined}
         animate={isListening && !reduced ? {
           boxShadow: [
@@ -78,7 +80,9 @@ export default function MicButton({ amplitude, micState, onPointerDown, onStop }
       >
         {isListening
           ? <StopCircle size={40} weight="fill" />
-          : <Microphone size={40} weight={isRequesting ? "fill" : "bold"} />
+          : isProcessing
+            ? <SpinnerGap size={40} weight="bold" className="rs-spin" />
+            : <Microphone size={40} weight={isRequesting ? "fill" : "bold"} />
         }
       </motion.button>
     </div>

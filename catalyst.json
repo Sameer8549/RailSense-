@@ -1,0 +1,22 @@
+{
+  "client": {
+    "source": "catalyst-client",
+    "ignore": []
+  },
+  "functions": {
+    "source": "functions",
+    "targets": [
+      "submitComplaint",
+      "analyzeComplaint",
+      "extractPnrFromPhoto",
+      "trackComplaint",
+      "speechToText",
+      "textToSpeech",
+      "staffApi"
+    ],
+    "ignore": [
+      "node_modules",
+      "common"
+    ]
+  }
+}

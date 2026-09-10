@@ -1,0 +1,10 @@
+{
+  "deployment": {
+    "name": "trackComplaint",
+    "stack": "node18",
+    "type": "advancedio"
+  },
+  "execution": {
+    "main": "index.js"
+  }
+}

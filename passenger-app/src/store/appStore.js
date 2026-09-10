@@ -1,11 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-function generateComplaintId() {
-  const year = new Date().getFullYear();
-  const num = Math.floor(10000 + Math.random() * 89999);
-  return `RS-${year}-${num}`;
-}
+import { submitComplaint as submitComplaintApi, trackComplaint } from "../lib/railsenseApi.js";
 
 // Slice that is NOT persisted (ephemeral UI state)
 const ephemeralSlice = (set, get) => ({
@@ -25,63 +20,42 @@ const ephemeralSlice = (set, get) => ({
   setMicState: (state) => set({ micState: state }),
   setComplaintStatus: (status) => set({ complaintStatus: status }),
 
-  submitComplaint: () => {
+  submitComplaint: async () => {
     set({ complaintStatus: "submitting" });
-    // TODO: replace with Zoho Catalyst API call
-    setTimeout(() => {
-      const id = generateComplaintId();
+    try {
       const draft = get().complaintDraft;
-
-      // Build a human-readable summary from issues
-      const summary =
-        draft.issues?.length
-          ? draft.issues.slice(0, 2).join(", ") +
-            (draft.issues.length > 2 ? ` +${draft.issues.length - 2} more` : "")
-          : draft.voiceTranscript?.slice(0, 60) || "General complaint";
-
-      const record = {
-        id,
-        timestamp: new Date().toISOString(),
-        summary,
-        train: draft.train || null,
-        coach: draft.coach || null,
-        pnr: draft.pnr || null,
-        issues: draft.issues || [],
-      };
-
+      const deviceId = get().deviceId || getOrCreateDeviceId();
+      const complaint = await submitComplaintApi({
+        transcript: draft.voiceTranscript || "",
+        language: localStorage.getItem("rs_lang") || "en",
+        pnr: draft.pnr || undefined,
+        trainNumber: draft.train || undefined,
+        coach: draft.coach || undefined,
+        berth: draft.berth || undefined,
+        evidencePhotoBase64: draft.evidencePhotoBase64 || undefined,
+        pnrPhotoBase64: draft.pnrPhotoBase64 || undefined,
+        deviceId
+      });
+      const record = normalizeSubmittedComplaint(complaint);
       set((s) => ({
         complaintStatus: "submitted",
         submittedComplaint: record,
-        // Prepend to persistent list, cap at 20 entries
+        deviceId,
         localComplaints: [record, ...s.localComplaints].slice(0, 20),
       }));
-    }, 1800);
+    } catch (error) {
+      set({ complaintStatus: "error", submittedComplaint: null, lastBackendError: error.message });
+    }
   },
 
-  trackComplaintById: (id) => {
+  trackComplaintById: async (id) => {
     set({ trackingStatus: "searching", trackingResult: null });
-    // TODO: replace with Zoho Catalyst API call — always fetch live, never use cached status
-    setTimeout(() => {
-      if (/^RS-\d{4}-\d{5}$/.test(id.trim().toUpperCase())) {
-        set({
-          trackingStatus: "found",
-          trackingResult: {
-            id: id.trim().toUpperCase(),
-            train: "12951",
-            coach: "B2",
-            issues: ["AC not working", "Coach dirty"],
-            steps: [
-              { status: "filed",        timestamp: "2026-09-09T03:30:00Z", note: null },
-              { status: "acknowledged", timestamp: "2026-09-09T05:15:00Z", note: "Assigned to TTE" },
-              { status: "underReview",  timestamp: "2026-09-09T07:00:00Z", note: null },
-            ],
-            currentStatus: "underReview",
-          },
-        });
-      } else {
-        set({ trackingStatus: "not_found" });
-      }
-    }, 1200);
+    try {
+      const result = await trackComplaint(id.trim().toUpperCase());
+      set({ trackingStatus: "found", trackingResult: normalizeTrackingResult(result) });
+    } catch (error) {
+      set({ trackingStatus: "not_found", lastBackendError: error.message });
+    }
   },
 
   resetComplaint: () =>
@@ -103,6 +77,8 @@ const persistedSlice = (set) => ({
   // Device-local list of complaints filed from this device (most-recent first)
   // Never contains live status — only enough to identify & look up the complaint
   localComplaints: [],
+  deviceId: getOrCreateDeviceId(),
+  lastBackendError: null,
 
   toggleDarkMode: () =>
     set((s) => {
@@ -116,6 +92,41 @@ const persistedSlice = (set) => ({
     }),
 });
 
+function getOrCreateDeviceId() {
+  const key = "rs_device_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = `device-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function normalizeSubmittedComplaint(complaint) {
+  return {
+    id: complaint.id || complaint.complaintId,
+    timestamp: complaint.timestamp || complaint.createdAt || new Date().toISOString(),
+    summary: complaint.summary || (complaint.issues || []).slice(0, 2).join(", ") || "General complaint",
+    train: complaint.train || complaint.trainNumber || null,
+    coach: complaint.coach || null,
+    pnr: complaint.pnr || null,
+    issues: complaint.issues || [],
+  };
+}
+
+function normalizeTrackingResult(complaint) {
+  return {
+    ...complaint,
+    id: complaint.id || complaint.complaintId,
+    train: complaint.train || complaint.trainNumber || null,
+    currentStatus: complaint.currentStatus === "under_review" ? "underReview" : (complaint.currentStatus || "filed"),
+    steps: (complaint.steps || []).map((step) => ({
+      ...step,
+      status: step.status === "under_review" ? "underReview" : step.status,
+    })),
+  };
+}
+
 export const useAppStore = create(
   persist(
     (set, get) => ({
@@ -128,6 +139,7 @@ export const useAppStore = create(
       partialize: (state) => ({
         darkMode: state.darkMode,
         localComplaints: state.localComplaints,
+        deviceId: state.deviceId,
       }),
     }
   )

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { Microphone, Keyboard, Camera, ArrowRight, CheckCircle } from "@phosphor-icons/react";
+import { Microphone, Keyboard, Camera, ArrowRight, CheckCircle, UploadSimple } from "@phosphor-icons/react";
 import { useI18n } from "../i18n/I18nContext.jsx";
 import { useAppStore } from "../store/appStore.js";
 import { useComplaintFlow } from "../hooks/useComplaintFlow.js";
@@ -11,6 +11,8 @@ import MicButton from "../components/MicButton.jsx";
 import WaveformBars from "../components/WaveformBars.jsx";
 import SkeletonLoader from "../components/SkeletonLoader.jsx";
 import ErrorCard from "../components/ErrorCard.jsx";
+import { extractPnrFromPhoto } from "../lib/railsenseApi.js";
+import { ticketFileToUploadDataUrl } from "../lib/imageUpload.js";
 
 export default function FollowUp() {
   const { t, lang } = useI18n();
@@ -26,7 +28,9 @@ export default function FollowUp() {
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrConfident, setOcrConfident] = useState(false);
-  const fileRef = useRef(null);
+  const [ticketFields, setTicketFields] = useState({});
+  const cameraRef = useRef(null);
+  const uploadRef = useRef(null);
 
   const handlePNRTranscript = useCallback((text) => {
     const digits = text.replace(/\D/g, "").slice(0, 10);
@@ -35,23 +39,30 @@ export default function FollowUp() {
 
   const { amplitude, micState, startListening, stopListening } = useMicInput({ onTranscript: handlePNRTranscript });
 
-  function handlePhotoCapture(e) {
+  async function handlePhotoCapture(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCapturedPhoto(URL.createObjectURL(file));
     setPhotoState("processing");
-    // TODO: replace with NVIDIA NIM OCR / Sarvam Vision call
-    setTimeout(() => {
-      const mockConfidence = Math.random() > 0.4;
-      setOcrResult("4512346789"); // mock PNR
-      setOcrConfident(mockConfidence);
-      if (mockConfidence) setPnrValue("4512346789");
+    try {
+      const dataUrl = await ticketFileToUploadDataUrl(file);
+      setCapturedPhoto(dataUrl);
+      updateDraft({ pnrPhotoBase64: dataUrl });
+      const result = await extractPnrFromPhoto(dataUrl);
+      setTicketFields(result);
+      setOcrResult(result.pnr || "");
+      setOcrConfident(!result.needsConfirmation && !!result.pnr);
+      if (result.pnr) setPnrValue(result.pnr);
+      if (result.coach) setCoachValue(result.coach);
       setPhotoState("done");
-    }, 2000);
+    } catch (_) {
+      setPhotoState("error");
+    } finally {
+      e.target.value = "";
+    }
   }
 
   function handleConfirm() {
-    updateDraft({ pnr: pnrValue, coach: coachValue });
+    updateDraft({ pnr: pnrValue, coach: coachValue, train: ticketFields.trainNumber || draft.train });
     afterFollowUp();
   }
 
@@ -136,7 +147,7 @@ export default function FollowUp() {
                 <MicButton amplitude={amplitude} micState={micState}
                   onPointerDown={() => startListening(lang)} onStop={stopListening} />
                 <p style={{ fontSize: 14, color: "var(--rs-text-secondary)", textAlign: "center", margin: 0 }}>
-                  {micState === "active" ? t("listening") : t("tapMicToSpeak")}
+                  {micState === "active" ? t("listening") : micState === "processing" ? "Transcribing your PNR..." : t("tapMicToSpeak")}
                 </p>
                 {pnrValue.length > 0 && (
                   <div style={{
@@ -176,11 +187,18 @@ export default function FollowUp() {
               >
                 {photoState === "idle" && (
                   <>
-                    <input ref={fileRef} type="file" accept="image/*" capture="environment"
+                    <input ref={cameraRef} type="file" accept="image/png,image/jpeg,image/webp" capture="environment"
                       onChange={handlePhotoCapture} style={{ display: "none" }} aria-label="Capture ticket photo" />
-                    <motion.button className="rs-btn-primary" onClick={() => fileRef.current?.click()} whileTap={{ scale: 0.97 }}>
-                      <Camera size={20} weight="bold" /> {t("photoTicket")}
-                    </motion.button>
+                    <input ref={uploadRef} type="file" accept="image/png,image/jpeg,image/webp,application/pdf"
+                      onChange={handlePhotoCapture} style={{ display: "none" }} aria-label="Upload ticket file" />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <motion.button className="rs-btn-primary" onClick={() => cameraRef.current?.click()} whileTap={{ scale: 0.97 }}>
+                        <Camera size={20} weight="bold" /> Camera
+                      </motion.button>
+                      <motion.button className="rs-btn-ghost" onClick={() => uploadRef.current?.click()} whileTap={{ scale: 0.97 }}>
+                        <UploadSimple size={20} weight="bold" /> Upload
+                      </motion.button>
+                    </div>
                   </>
                 )}
                 {photoState === "processing" && (
@@ -211,6 +229,13 @@ export default function FollowUp() {
                           {t("pleaseVerify")}
                         </p>
                         <OTPInput value={pnrValue} onChange={setPnrValue} length={10} />
+                      </div>
+                    )}
+                    {(ticketFields.trainNumber || ticketFields.coach || ticketFields.berth) && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 13, color: "var(--rs-text-secondary)" }}>
+                        {ticketFields.trainNumber && <span>Train {ticketFields.trainNumber}</span>}
+                        {ticketFields.coach && <span>Coach {ticketFields.coach}</span>}
+                        {ticketFields.berth && <span>Berth {ticketFields.berth}</span>}
                       </div>
                     )}
                   </div>

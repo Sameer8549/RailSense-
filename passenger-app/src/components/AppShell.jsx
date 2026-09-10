@@ -37,7 +37,7 @@ function LogoChip({ size = 32 }) {
       }}
     >
       <img
-        src="/logo.png"
+        src="/app/logo.png"
         alt="RailSense AI"
         width={size}
         height={size}

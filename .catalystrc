@@ -1,0 +1,30 @@
+{
+  "projects": [
+    {
+      "idx": 1,
+      "id": "43505000000424037",
+      "name": "railsense",
+      "domain": {
+        "id": "60074625517",
+        "name": "railsense-60074625517.development.catalystserverless.in"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60074625517",
+          "name": "Development",
+          "type": "Development"
+        }
+      ]
+    }
+  ],
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  }
+}

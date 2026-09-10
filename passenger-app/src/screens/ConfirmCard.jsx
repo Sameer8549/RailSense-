@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { PencilSimple, CheckCircle } from "@phosphor-icons/react";
@@ -102,6 +102,7 @@ export default function ConfirmCard() {
   const submitComplaint = useAppStore((s) => s.submitComplaint);
   const complaintStatus = useAppStore((s) => s.complaintStatus);
   const submittedComplaint = useAppStore((s) => s.submittedComplaint);
+  const lastBackendError = useAppStore((s) => s.lastBackendError);
 
   function handleFieldSave(key, value) {
     updateDraft({ [key]: value });
@@ -111,11 +112,9 @@ export default function ConfirmCard() {
     submitComplaint();
   }
 
-  // Navigate on submission
-  if (submittedComplaint) {
-    navigate("/done");
-    return null;
-  }
+  useEffect(() => {
+    if (submittedComplaint) navigate("/done");
+  }, [navigate, submittedComplaint]);
 
   return (
     <div style={{
@@ -160,7 +159,7 @@ export default function ConfirmCard() {
           padding: "14px 20px",
           display: "flex", alignItems: "center", gap: 10,
         }}>
-          <img src="/logo.png" alt="" style={{ height: 24, width: 24, borderRadius: 6, objectFit: "contain" }} />
+          <img src="/app/logo.png" alt="" style={{ height: 24, width: 24, borderRadius: 6, objectFit: "contain" }} />
           <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>
             RailSense AI
           </span>
@@ -237,6 +236,21 @@ export default function ConfirmCard() {
       >
         {complaintStatus === "submitting" ? t("submitting") : t("submitComplaint")}
       </motion.button>
+      {complaintStatus === "error" && (
+        <motion.p
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            margin: "-12px 0 0",
+            color: "var(--rs-red)",
+            fontSize: 13,
+            lineHeight: 1.45,
+            textAlign: "center",
+          }}
+        >
+          {lastBackendError || t("errorNetwork")}
+        </motion.p>
+      )}
     </div>
   );
 }

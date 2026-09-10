@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { AppShell } from "@/components/AppShell.jsx";
@@ -40,6 +40,26 @@ function AppLayout() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const location = useLocation();
   const session = useStaffStore((s) => s.session);
+  const fetchIncidents = useStaffStore((s) => s.fetchIncidents);
+  const startPolling = useStaffStore((s) => s.startPolling);
+  const stopPolling = useStaffStore((s) => s.stopPolling);
+
+  useEffect(() => {
+    fetchIncidents();
+    startPolling();
+    const handleVisibility = () => {
+      if (document.hidden) stopPolling();
+      else {
+        startPolling();
+        fetchIncidents();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      stopPolling();
+    };
+  }, [fetchIncidents, startPolling, stopPolling]);
 
   return (
     <AppShell onCommandOpen={() => setCmdOpen(true)}>

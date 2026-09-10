@@ -59,7 +59,7 @@ export default function Login() {
           <div className="bg-primary px-6 py-5">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
-                <div className="w-5 h-5 bg-white" style={{ maskImage: "url(/logo.png)", WebkitMaskImage: "url(/logo.png)", maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center" }} />
+                <div className="w-5 h-5 bg-white" style={{ maskImage: "url(/app/staff/logo.png)", WebkitMaskImage: "url(/app/staff/logo.png)", maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center" }} />
               </div>
               <div>
                 <div className="text-white font-bold text-base leading-none">RailSense</div>

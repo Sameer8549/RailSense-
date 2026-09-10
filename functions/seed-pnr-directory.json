@@ -1,0 +1,9 @@
+[
+  { "pnr": "4521987630", "trainNumber": "12951", "trainName": "Mumbai Rajdhani Express", "coach": "B2", "berth": "42" },
+  { "pnr": "7634512980", "trainNumber": "12953", "trainName": "August Kranti Rajdhani", "coach": "A1", "berth": "18" },
+  { "pnr": "3310987562", "trainNumber": "12627", "trainName": "Karnataka Express", "coach": "S4", "berth": "09" },
+  { "pnr": "8821047532", "trainNumber": "12615", "trainName": "Grand Trunk Express", "coach": "B1", "berth": "31" },
+  { "pnr": "5901234786", "trainNumber": "12723", "trainName": "Telangana Express", "coach": "S2", "berth": "55" },
+  { "pnr": "1045678923", "trainNumber": "12621", "trainName": "Tamil Nadu Express", "coach": "A2", "berth": "07" },
+  { "pnr": "6789012345", "trainNumber": "16587", "trainName": "Yesvantpur Bikaner Express", "coach": "B3", "berth": "24" }
+]
