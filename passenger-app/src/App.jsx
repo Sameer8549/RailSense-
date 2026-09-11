@@ -21,6 +21,14 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function TicketRoute({ children }) {
+  const { lang } = useI18n();
+  const ticketType = useAppStore((s) => s.complaintDraft.ticketType);
+  if (!lang) return <Navigate to="/" replace />;
+  if (!ticketType) return <Navigate to="/ticket-type" replace />;
+  return children;
+}
+
 function PageTransition({ children }) {
   const reduced = useReducedMotion();
   if (reduced) return children;
@@ -62,19 +70,19 @@ export default function App() {
             element={<ProtectedRoute><PageTransition><TicketTypeSelect /></PageTransition></ProtectedRoute>} />
 
           <Route path="/compose"
-            element={<ProtectedRoute><PageTransition><Composer /></PageTransition></ProtectedRoute>} />
+            element={<TicketRoute><PageTransition><Composer /></PageTransition></TicketRoute>} />
 
           <Route path="/understanding"
-            element={<ProtectedRoute><PageTransition><TagReveal /></PageTransition></ProtectedRoute>} />
+            element={<TicketRoute><PageTransition><TagReveal /></PageTransition></TicketRoute>} />
 
           <Route path="/followup"
-            element={<ProtectedRoute><PageTransition><FollowUp /></PageTransition></ProtectedRoute>} />
+            element={<TicketRoute><PageTransition><FollowUp /></PageTransition></TicketRoute>} />
 
           <Route path="/evidence"
-            element={<ProtectedRoute><PageTransition><Evidence /></PageTransition></ProtectedRoute>} />
+            element={<TicketRoute><PageTransition><Evidence /></PageTransition></TicketRoute>} />
 
           <Route path="/confirm"
-            element={<ProtectedRoute><PageTransition><ConfirmCard /></PageTransition></ProtectedRoute>} />
+            element={<TicketRoute><PageTransition><ConfirmCard /></PageTransition></TicketRoute>} />
 
           <Route path="/done"
             element={<ProtectedRoute><PageTransition><Done /></PageTransition></ProtectedRoute>} />

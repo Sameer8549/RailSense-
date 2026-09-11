@@ -5,7 +5,7 @@ import { submitComplaint as submitComplaintApi, trackComplaint } from "../lib/ra
 // Slice that is NOT persisted (ephemeral UI state)
 const ephemeralSlice = (set, get) => ({
   complaintDraft: {
-    ticketType: "RESERVED", pnr: "", train: "", coach: "", berth: "", utsNumber: "", coachZone: "",
+    ticketType: "", pnr: "", train: "", coach: "", berth: "", utsNumber: "", coachZone: "",
     issues: [], voiceTranscript: "", photoEvidence: null,
   },
   micState: "idle",
@@ -64,7 +64,7 @@ const ephemeralSlice = (set, get) => ({
   resetComplaint: () =>
     set({
       complaintDraft: {
-        ticketType: "RESERVED", pnr: "", train: "", coach: "", berth: "", utsNumber: "", coachZone: "",
+        ticketType: "", pnr: "", train: "", coach: "", berth: "", utsNumber: "", coachZone: "",
         issues: [], voiceTranscript: "", photoEvidence: null,
       },
       complaintStatus: "idle",
