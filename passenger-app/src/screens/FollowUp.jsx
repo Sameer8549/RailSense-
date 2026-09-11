@@ -98,29 +98,29 @@ export default function FollowUp() {
         >
           <div>
             <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 6px" }}>
-              General coach intercept details
+              {t("unreservedDetailsTitle")}
             </h2>
             <p style={{ fontSize: 15, color: "var(--rs-text-secondary)", margin: 0, lineHeight: 1.5 }}>
-              No PNR is needed. Staff will route this to the next station where the train can be intercepted.
+              {t("unreservedDetailsSubtext")}
             </p>
           </div>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <span style={{ fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              UTS number, optional
+              {t("utsOptional")}
             </span>
             <input
               type="text"
               className="rs-input"
               value={utsNumber}
               onChange={(e) => setUtsNumber(e.target.value.toUpperCase())}
-              placeholder="For reference, if you have it"
+              placeholder={t("utsPlaceholder")}
             />
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <span style={{ fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Train number
+              {t("trainNumber")}
             </span>
             <input
               inputMode="numeric"
@@ -128,17 +128,21 @@ export default function FollowUp() {
               className="rs-input"
               value={trainValue}
               onChange={(e) => setTrainValue(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              placeholder="5-digit train number"
+              placeholder={t("trainNumberPlaceholder")}
               style={{ fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700 }}
             />
           </label>
 
           <div>
             <span style={{ display: "block", fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-              Where are you in the general coach?
+              {t("coachZonePrompt")}
             </span>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-              {["Front", "Middle", "Back"].map((zone) => (
+              {[
+                ["Front", t("zoneFront")],
+                ["Middle", t("zoneMiddle")],
+                ["Back", t("zoneBack")],
+              ].map(([zone, label]) => (
                 <motion.button
                   key={zone}
                   type="button"
@@ -161,7 +165,7 @@ export default function FollowUp() {
                   }}
                 >
                   <TrainSimple size={22} weight="bold" />
-                  {zone}
+                  {label}
                 </motion.button>
               ))}
             </div>

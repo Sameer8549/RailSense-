@@ -2,23 +2,25 @@ import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { Ticket, TrainSimple } from "@phosphor-icons/react";
 import { useAppStore } from "../store/appStore.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const OPTIONS = [
   {
     type: "RESERVED",
-    title: "Reserved ticket / PNR",
-    body: "I have a PNR, coach or berth details.",
+    titleKey: "reservedTicketTitle",
+    bodyKey: "reservedTicketBody",
     Icon: Ticket,
   },
   {
     type: "UNRESERVED",
-    title: "General / unreserved ticket",
-    body: "I have no PNR or fixed berth. Route this to an intercept station.",
+    titleKey: "unreservedTicketTitle",
+    bodyKey: "unreservedTicketBody",
     Icon: TrainSimple,
   },
 ];
 
 export default function TicketTypeSelect() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const draft = useAppStore((s) => s.complaintDraft);
   const updateDraft = useAppStore((s) => s.updateDraft);
@@ -45,15 +47,15 @@ export default function TicketTypeSelect() {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}>
         <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 8px", lineHeight: 1.2 }}>
-          Do you have a PNR, or is this a general ticket?
+          {t("ticketTypePrompt")}
         </h1>
         <p style={{ fontSize: 15, color: "var(--rs-text-secondary)", margin: 0, lineHeight: 1.5 }}>
-          This decides whether staff should find your coach directly or meet the train at the next usable halt.
+          {t("ticketTypeSubtext")}
         </p>
       </motion.div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {OPTIONS.map(({ type, title, body, Icon }, index) => {
+        {OPTIONS.map(({ type, titleKey, bodyKey, Icon }, index) => {
           const selected = draft.ticketType === type;
           return (
             <motion.button
@@ -91,10 +93,10 @@ export default function TicketTypeSelect() {
               </div>
               <div>
                 <div style={{ fontSize: 17, fontWeight: 800, color: "var(--rs-text-primary)", lineHeight: 1.25 }}>
-                  {title}
+                  {t(titleKey)}
                 </div>
                 <div style={{ fontSize: 13, color: "var(--rs-text-secondary)", marginTop: 4, lineHeight: 1.45 }}>
-                  {body}
+                  {t(bodyKey)}
                 </div>
               </div>
             </motion.button>

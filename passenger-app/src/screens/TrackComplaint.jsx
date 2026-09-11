@@ -67,15 +67,15 @@ function Timeline({ result, onBack, t }) {
         <div className="rs-card" style={{ padding: "16px 20px" }}>
           <p style={{ fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 600,
             textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>
-            Intercept routing
+            {t("interceptRouting")}
           </p>
           <div style={{ fontSize: 16, color: "var(--rs-text-primary)", fontWeight: 700, lineHeight: 1.45 }}>
             {result.intercept?.station
-              ? `Crew dispatched to ${result.intercept.station}${result.intercept.eta ? `, ETA ${result.intercept.eta}` : ""}.`
-              : "Intercept station is being resolved by staff."}
+              ? `${t("crewDispatchedTo")} ${result.intercept.station}${result.intercept.eta ? `, ${t("etaLabel")} ${result.intercept.eta}` : ""}.`
+              : t("interceptPending")}
           </div>
           <div style={{ fontSize: 13, color: "var(--rs-text-secondary)", marginTop: 6 }}>
-            {result.coachZone ? `${result.coachZone} general coach` : "General coach"}{result.train ? ` · Train ${result.train}` : ""}
+            {result.coachZone ? `${result.coachZone} ${t("generalCoach")}` : t("generalCoach")}{result.train ? ` · ${t("trainNumber")} ${result.train}` : ""}
           </div>
         </div>
       )}
@@ -204,7 +204,7 @@ function LocalComplaintPicker({ complaints, onSelect, t }) {
               {c.ticketType === "UNRESERVED" && (
                 <span style={{ fontSize: 11, background: "var(--rs-blue-light)", color: "var(--rs-blue)",
                   padding: "2px 8px", borderRadius: "var(--rs-radius-pill)", fontWeight: 700 }}>
-                  Intercept
+                  {t("interceptBadge")}
                 </span>
               )}
             </div>

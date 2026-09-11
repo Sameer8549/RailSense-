@@ -182,9 +182,9 @@ export default function ConfirmCard() {
             onSave={handleFieldSave} placeholder={t("notProvided")} />
           {isUnreserved ? (
             <>
-              <EditableField label="Coach zone" value={draft.coachZone} fieldKey="coachZone"
-                onSave={handleFieldSave} placeholder="Front / Middle / Back" />
-              <EditableField label="UTS reference" value={draft.utsNumber} fieldKey="utsNumber"
+              <EditableField label={t("coachZone")} value={draft.coachZone} fieldKey="coachZone"
+                onSave={handleFieldSave} placeholder={t("zonePlaceholder")} />
+              <EditableField label={t("utsReference")} value={draft.utsNumber} fieldKey="utsNumber"
                 onSave={handleFieldSave} placeholder="Optional" />
             </>
           ) : (
