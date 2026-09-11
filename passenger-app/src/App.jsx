@@ -6,6 +6,7 @@ import { useAppStore } from "./store/appStore.js";
 import AppShell from "./components/AppShell.jsx";
 
 import LanguageSelect   from "./screens/LanguageSelect.jsx";
+import TicketTypeSelect from "./screens/TicketTypeSelect.jsx";
 import Composer         from "./screens/Composer.jsx";
 import TagReveal        from "./screens/TagReveal.jsx";
 import FollowUp         from "./screens/FollowUp.jsx";
@@ -56,6 +57,9 @@ export default function App() {
         <Routes location={location} key={location.pathname}>
           <Route path="/"
             element={<PageTransition><LanguageSelect /></PageTransition>} />
+
+          <Route path="/ticket-type"
+            element={<ProtectedRoute><PageTransition><TicketTypeSelect /></PageTransition></ProtectedRoute>} />
 
           <Route path="/compose"
             element={<ProtectedRoute><PageTransition><Composer /></PageTransition></ProtectedRoute>} />

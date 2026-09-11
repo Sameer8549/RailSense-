@@ -26,6 +26,11 @@ const STATUS = {
 const CLOSED = ["resolved","escalated","duplicate","merged","verified"];
 
 function fmt(ts) { return ts ? new Date(ts).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—"; }
+function interceptLabel(inc) {
+  const station = inc.intercept?.station || inc.intercept?.interceptStation || "resolving station";
+  const eta = inc.intercept?.eta ? `, ETA ${inc.intercept.eta}` : "";
+  return `Intercept: ${station}${eta} · Platform crew · ${inc.coachZone || "Middle"} General Coach`;
+}
 
 function Bdg({ sev, children, layoutId }) {
   return (
@@ -340,6 +345,11 @@ export default function IncidentBrief({ onClose, fullscreen }) {
               {inc.recurrenceCount}× recurrence
             </span>
           )}
+          {inc.interceptRouting && (
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full border bg-sky-500/10 text-sky-600 border-sky-500/20 dark:bg-sky-500/20 dark:text-sky-300">
+              INTERCEPT
+            </span>
+          )}
         </div>
         <button type="button" onClick={onClose}
           className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted hover:bg-muted hover:bg-muted transition-colors border border-border shrink-0 shadow-sm">
@@ -363,13 +373,24 @@ export default function IncidentBrief({ onClose, fullscreen }) {
 
             {/* Core info */}
             <div className="flex items-center justify-between gap-4 mb-5 flex-wrap relative z-10">
-              <div className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+              <div className="text-sm font-semibold text-muted-foreground flex items-center gap-2 flex-wrap">
                 <span className="bg-muted px-2.5 py-1 rounded-md border border-border">Train {inc.train}</span>
-                <span>·</span>
-                <span className="bg-muted px-2.5 py-1 rounded-md border border-border">Coach {inc.coach}</span>
-                {inc.berth ? <><span className="text-muted-foreground/50">·</span> <span className="bg-muted px-2.5 py-1 rounded-md border border-border">Berth {inc.berth}</span></> : ""}
-                {inc.pnr ? <><span className="text-muted-foreground/50">·</span> <span className="font-mono bg-muted px-2.5 py-1 rounded-md border border-border">PNR {inc.pnr}</span></> : ""}
+                  {inc.interceptRouting ? (
+                  <span className="bg-sky-500/10 text-sky-600 px-2.5 py-1 rounded-md border border-sky-500/20">{interceptLabel(inc)}</span>
+                ) : (
+                  <>
+                    <span>·</span>
+                    <span className="bg-muted px-2.5 py-1 rounded-md border border-border">Coach {inc.coach}</span>
+                    {inc.berth ? <><span className="text-muted-foreground/50">·</span> <span className="bg-muted px-2.5 py-1 rounded-md border border-border">Berth {inc.berth}</span></> : ""}
+                    {inc.pnr ? <><span className="text-muted-foreground/50">·</span> <span className="font-mono bg-muted px-2.5 py-1 rounded-md border border-border">PNR {inc.pnr}</span></> : ""}
+                  </>
+                )}
               </div>
+              {inc.interceptRouting && inc.interceptIssues?.length > 1 && (
+                <div className="text-xs font-bold text-sky-600 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 mb-5 relative z-10">
+                  Batched dispatch: {inc.interceptIssues.join(", ")}
+                </div>
+              )}
               <div className={cn("flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-bold shrink-0 shadow-sm transition-colors",
                 inc.assignee
                   ? "border-green-500/20 bg-green-500/10 text-green-600 "

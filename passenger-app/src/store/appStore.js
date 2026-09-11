@@ -5,7 +5,7 @@ import { submitComplaint as submitComplaintApi, trackComplaint } from "../lib/ra
 // Slice that is NOT persisted (ephemeral UI state)
 const ephemeralSlice = (set, get) => ({
   complaintDraft: {
-    pnr: "", train: "", coach: "", berth: "",
+    ticketType: "RESERVED", pnr: "", train: "", coach: "", berth: "", utsNumber: "", coachZone: "",
     issues: [], voiceTranscript: "", photoEvidence: null,
   },
   micState: "idle",
@@ -32,6 +32,9 @@ const ephemeralSlice = (set, get) => ({
         trainNumber: draft.train || undefined,
         coach: draft.coach || undefined,
         berth: draft.berth || undefined,
+        ticketType: draft.ticketType || "RESERVED",
+        utsNumber: draft.utsNumber || undefined,
+        coachZone: draft.coachZone || undefined,
         evidencePhotoBase64: draft.evidencePhotoBase64 || undefined,
         pnrPhotoBase64: draft.pnrPhotoBase64 || undefined,
         deviceId
@@ -61,7 +64,7 @@ const ephemeralSlice = (set, get) => ({
   resetComplaint: () =>
     set({
       complaintDraft: {
-        pnr: "", train: "", coach: "", berth: "",
+        ticketType: "RESERVED", pnr: "", train: "", coach: "", berth: "", utsNumber: "", coachZone: "",
         issues: [], voiceTranscript: "", photoEvidence: null,
       },
       complaintStatus: "idle",
@@ -110,6 +113,10 @@ function normalizeSubmittedComplaint(complaint) {
     train: complaint.train || complaint.trainNumber || null,
     coach: complaint.coach || null,
     pnr: complaint.pnr || null,
+    ticketType: complaint.ticketType || complaint.ticket_type || "RESERVED",
+    utsNumber: complaint.utsNumber || complaint.identifier_number || null,
+    coachZone: complaint.coachZone || null,
+    intercept: complaint.intercept || null,
     issues: complaint.issues || [],
   };
 }
@@ -119,6 +126,10 @@ function normalizeTrackingResult(complaint) {
     ...complaint,
     id: complaint.id || complaint.complaintId,
     train: complaint.train || complaint.trainNumber || null,
+    ticketType: complaint.ticketType || complaint.ticket_type || "RESERVED",
+    utsNumber: complaint.utsNumber || complaint.identifier_number || null,
+    coachZone: complaint.coachZone || null,
+    intercept: complaint.intercept || null,
     currentStatus: complaint.currentStatus === "under_review" ? "underReview" : (complaint.currentStatus || "filed"),
     steps: (complaint.steps || []).map((step) => ({
       ...step,

@@ -63,6 +63,23 @@ function Timeline({ result, onBack, t }) {
       </div>
 
       {/* Status timeline */}
+      {result.ticketType === "UNRESERVED" && (
+        <div className="rs-card" style={{ padding: "16px 20px" }}>
+          <p style={{ fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 600,
+            textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>
+            Intercept routing
+          </p>
+          <div style={{ fontSize: 16, color: "var(--rs-text-primary)", fontWeight: 700, lineHeight: 1.45 }}>
+            {result.intercept?.station
+              ? `Crew dispatched to ${result.intercept.station}${result.intercept.eta ? `, ETA ${result.intercept.eta}` : ""}.`
+              : "Intercept station is being resolved by staff."}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--rs-text-secondary)", marginTop: 6 }}>
+            {result.coachZone ? `${result.coachZone} general coach` : "General coach"}{result.train ? ` · Train ${result.train}` : ""}
+          </div>
+        </div>
+      )}
+
       <div className="rs-card" style={{ padding: 20 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {STATUS_STEPS.map((step, i) => {
@@ -170,7 +187,7 @@ function LocalComplaintPicker({ complaints, onSelect, t }) {
           <p style={{ fontSize: 13, color: "var(--rs-text-secondary)", margin: 0, lineHeight: 1.4 }}>
             {c.summary}
           </p>
-          {(c.train || c.coach) && (
+          {(c.train || c.coach || c.intercept) && (
             <div style={{ display: "flex", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
               {c.train && (
                 <span style={{ fontSize: 11, background: "var(--rs-surface-2)", color: "var(--rs-text-tertiary)",
@@ -182,6 +199,12 @@ function LocalComplaintPicker({ complaints, onSelect, t }) {
                 <span style={{ fontSize: 11, background: "var(--rs-surface-2)", color: "var(--rs-text-tertiary)",
                   padding: "2px 8px", borderRadius: "var(--rs-radius-pill)", fontWeight: 600 }}>
                   Coach {c.coach}
+                </span>
+              )}
+              {c.ticketType === "UNRESERVED" && (
+                <span style={{ fontSize: 11, background: "var(--rs-blue-light)", color: "var(--rs-blue)",
+                  padding: "2px 8px", borderRadius: "var(--rs-radius-pill)", fontWeight: 700 }}>
+                  Intercept
                 </span>
               )}
             </div>

@@ -51,9 +51,9 @@ export const useStaffStore = create(
       },
 
       // ── Global Queue Filters ───────────────────────────────────
-      queueFilter: { search: "", severity: "all", recurringOnly: false, coach: "all", train: "all", period: "30d", status: "open" },
+      queueFilter: { search: "", severity: "all", recurringOnly: false, interceptOnly: false, coach: "all", train: "all", period: "30d", status: "open" },
       setQueueFilter: (partial) => set((s) => ({ queueFilter: { ...s.queueFilter, ...partial } })),
-      clearQueueFilter: () => set({ queueFilter: { search: "", severity: "all", recurringOnly: false, coach: "all", train: "all", period: "30d", status: "open" } }),
+      clearQueueFilter: () => set({ queueFilter: { search: "", severity: "all", recurringOnly: false, interceptOnly: false, coach: "all", train: "all", period: "30d", status: "open" } }),
 
       // ── Dashboard / Command Center Filters ─────────────────────
       dashboardFilter: { dateRange: 30, route: "all", train: "all", severity: "all", issueType: "all" },

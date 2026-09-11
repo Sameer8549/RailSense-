@@ -18,7 +18,7 @@ export default function LanguageSelect() {
 
   function handleSelect(code) {
     setLang(code);
-    navigate("/compose");
+    navigate("/ticket-type");
   }
 
   return (

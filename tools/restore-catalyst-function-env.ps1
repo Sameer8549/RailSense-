@@ -5,6 +5,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $required = @("GROQ_API_KEY", "SARVAM_API_KEY", "NVIDIA_NIM_API_KEY")
+$optional = @("RAPIDAPI_KEY", "RAPIDAPI_HOST", "IRCTC1_SCHEDULE_URL_TEMPLATE")
 $missing = @($required | Where-Object { -not [Environment]::GetEnvironmentVariable($_, "Process") })
 if ($missing.Count -gt 0) {
   throw "Missing required process environment variables: $($missing -join ', ')"
@@ -13,6 +14,12 @@ if ($missing.Count -gt 0) {
 $envMap = @{}
 foreach ($name in $required) {
   $envMap[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
+}
+foreach ($name in $optional) {
+  $value = [Environment]::GetEnvironmentVariable($name, "Process")
+  if ($value) {
+    $envMap[$name] = $value
+  }
 }
 
 $configFiles = Get-ChildItem -Path "functions" -Filter "catalyst-config.json" -Recurse

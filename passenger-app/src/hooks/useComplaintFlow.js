@@ -9,11 +9,12 @@ export function useComplaintFlow() {
   const navigate = useNavigate();
   const draft = useAppStore((s) => s.complaintDraft);
 
-  const needsPNR = () => !draft.pnr || draft.pnr.length < 10;
-  const needsCoach = () => !draft.coach;
+  const isUnreserved = () => draft.ticketType === "UNRESERVED";
+  const needsPNR = () => !isUnreserved() && (!draft.pnr || draft.pnr.length < 10);
+  const needsCoach = () => !isUnreserved() && !draft.coach;
 
   const goToFollowUp = () => {
-    if (needsPNR() || needsCoach()) {
+    if (isUnreserved() || needsPNR() || needsCoach()) {
       navigate("/followup");
     } else {
       navigate("/evidence");
@@ -24,5 +25,5 @@ export function useComplaintFlow() {
     navigate("/evidence");
   };
 
-  return { needsPNR, needsCoach, goToFollowUp, afterFollowUp, draft };
+  return { isUnreserved, needsPNR, needsCoach, goToFollowUp, afterFollowUp, draft };
 }

@@ -112,6 +112,8 @@ export default function ConfirmCard() {
     submitComplaint();
   }
 
+  const isUnreserved = draft.ticketType === "UNRESERVED";
+
   useEffect(() => {
     if (submittedComplaint) navigate("/done");
   }, [navigate, submittedComplaint]);
@@ -178,14 +180,25 @@ export default function ConfirmCard() {
         <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
           <EditableField label={t("trainNumber")} value={draft.train} fieldKey="train"
             onSave={handleFieldSave} placeholder={t("notProvided")} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <EditableField label={t("coach")} value={draft.coach} fieldKey="coach"
-              onSave={handleFieldSave} placeholder={t("notProvided")} />
-            <EditableField label={t("berth")} value={draft.berth} fieldKey="berth"
-              onSave={handleFieldSave} placeholder={t("notProvided")} />
-          </div>
-          <EditableField label={t("pnr")} value={draft.pnr} fieldKey="pnr"
-            onSave={handleFieldSave} placeholder={t("notProvided")} />
+          {isUnreserved ? (
+            <>
+              <EditableField label="Coach zone" value={draft.coachZone} fieldKey="coachZone"
+                onSave={handleFieldSave} placeholder="Front / Middle / Back" />
+              <EditableField label="UTS reference" value={draft.utsNumber} fieldKey="utsNumber"
+                onSave={handleFieldSave} placeholder="Optional" />
+            </>
+          ) : (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <EditableField label={t("coach")} value={draft.coach} fieldKey="coach"
+                  onSave={handleFieldSave} placeholder={t("notProvided")} />
+                <EditableField label={t("berth")} value={draft.berth} fieldKey="berth"
+                  onSave={handleFieldSave} placeholder={t("notProvided")} />
+              </div>
+              <EditableField label={t("pnr")} value={draft.pnr} fieldKey="pnr"
+                onSave={handleFieldSave} placeholder={t("notProvided")} />
+            </>
+          )}
 
           {/* Issues */}
           <div>

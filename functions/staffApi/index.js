@@ -50,10 +50,12 @@ function statusForAction(actionType, outcome) {
 
 function buildActionPlan(complaint, client, recurrenceCount) {
   const tags = client.issueTags || [];
+  const isIntercept = (client.ticketType || complaint.ticket_type) === "UNRESERVED";
   const highRisk = tags.includes("safety") || client.severity === "high";
   const recurring = recurrenceCount > 2;
   const hasTicket = !!(complaint.pnrPhotoUrl || complaint.pnrPhotoBase64);
   const steps = [];
+  if (isIntercept) steps.push(`Dispatch platform crew to ${client.intercept?.station || client.intercept?.interceptStation || "the resolved intercept station"} for the ${client.coachZone || "middle"} general coach.`);
   if (highRisk) steps.push("TTE to verify the passenger location and immediate safety condition.");
   if (tags.includes("ac_cooling")) steps.push("Inspect coach HVAC controls and log the coach-level fault.");
   if (tags.includes("toilet_unclean") || tags.includes("cleanliness")) steps.push("Assign onboard housekeeping and capture a post-service verification.");
@@ -63,12 +65,14 @@ function buildActionPlan(complaint, client, recurrenceCount) {
   if (!steps.length) steps.push("Acknowledge the passenger, inspect on site, and record the resolution evidence.");
   return {
     priority: highRisk ? "immediate" : recurring ? "priority" : "standard",
-    recommendedAction: highRisk ? "Verify on site, then escalate to the duty controller." : recurring ? "Assign maintenance and schedule an inspection." : "Assign the case and complete an on-site verification.",
+    recommendedAction: isIntercept
+      ? `Intercept at ${client.intercept?.station || client.intercept?.interceptStation || "next suitable halt"}${client.intercept?.eta ? ` by ${client.intercept.eta}` : ""}; alert platform staff for ${client.coachZone || "middle"} general coach.`
+      : highRisk ? "Verify on site, then escalate to the duty controller." : recurring ? "Assign maintenance and schedule an inspection." : "Assign the case and complete an on-site verification.",
     steps
   };
 }
 
-function mapComplaintToIncident(complaint, history = []) {
+function mapComplaintToIncident(complaint, history = [], interceptIssues = []) {
   const client = toClientComplaint(complaint, history);
   const status = client.currentStatus || "filed";
   const issueTags = client.issueTags && client.issueTags.length ? client.issueTags : ["general"];
@@ -79,6 +83,8 @@ function mapComplaintToIncident(complaint, history = []) {
   if (evidencePhotoUrl) images.push({ url: evidencePhotoUrl, caption: "Passenger evidence" });
   if (ticketPhotoUrl) images.push({ url: ticketPhotoUrl, caption: "Ticket document" });
   const actionPlan = buildActionPlan(complaint, client, recurrenceCount);
+  const ticketType = client.ticketType || complaint.ticket_type || "RESERVED";
+  const intercept = client.intercept || complaint.intercept || null;
   return {
     ...client,
     id: client.id,
@@ -87,7 +93,15 @@ function mapComplaintToIncident(complaint, history = []) {
     summary: client.summary,
     train: client.trainNumber || client.train || "Unknown",
     trainName: complaint.trainName || "",
-    coach: client.coach || "NA",
+    ticketType,
+    ticket_type: ticketType,
+    identifier_number: client.identifier_number || complaint.identifier_number || null,
+    utsNumber: client.utsNumber || complaint.utsNumber || complaint.identifier_number || null,
+    coachZone: client.coachZone || complaint.coachZone || null,
+    intercept,
+    interceptIssues,
+    interceptRouting: ticketType === "UNRESERVED",
+    coach: ticketType === "UNRESERVED" ? null : (client.coach || "NA"),
     berth: client.berth || null,
     issueTypes: issueTags.map((tag) => tag.replace("_unclean", "").replace("_cooling", "")),
     severity: client.severity,
@@ -123,8 +137,12 @@ function mapComplaintToIncident(complaint, history = []) {
 async function getComplaints(datastore) {
   const complaints = await datastore.table("Complaints").getAllRows();
   let historyRows = [];
+  let interceptRows = [];
   try {
     historyRows = await datastore.table("ComplaintStatusHistory").getAllRows();
+  } catch (_) {}
+  try {
+    interceptRows = await datastore.table("InterceptTickets").getAllRows();
   } catch (_) {}
   const historyById = new Map();
   for (const row of historyRows) {
@@ -133,12 +151,32 @@ async function getComplaints(datastore) {
     if (!historyById.has(item.complaintId)) historyById.set(item.complaintId, []);
     historyById.get(item.complaintId).push(item);
   }
-  return complaints.map((row) => {
+  const interceptIssuesByRoute = new Map();
+  for (const row of interceptRows) {
+    let issues = [];
+    try { issues = row.issues ? JSON.parse(row.issues) : []; } catch (_) {}
+    interceptIssuesByRoute.set(`${row.trainNumber || ""}|${row.interceptStation || ""}`, issues);
+  }
+  const entries = complaints.map((row) => {
     const complaint = parsePayload(row);
     if (complaint && !complaint.complaintId) complaint.complaintId = row.complaintId || row.id;
     const history = (historyById.get(complaint.complaintId) || [])
       .sort((a, b) => new Date(a.timestamp || a.CREATEDTIME) - new Date(b.timestamp || b.CREATEDTIME));
-    return { rawRow: row, complaint, incident: mapComplaintToIncident(complaint, history) };
+    return { rawRow: row, complaint, history };
+  });
+  for (const entry of entries) {
+    const complaint = entry.complaint || {};
+    if ((complaint.ticketType || complaint.ticket_type) !== "UNRESERVED") continue;
+    const station = complaint.intercept?.station || complaint.intercept?.interceptStation || "";
+    const key = `${complaint.trainNumber || complaint.train || ""}|${station}`;
+    const existing = interceptIssuesByRoute.get(key) || [];
+    interceptIssuesByRoute.set(key, Array.from(new Set([...existing, complaint.complaintId])));
+  }
+  return entries.map((entry) => {
+    const complaint = entry.complaint || {};
+    const station = complaint.intercept?.station || complaint.intercept?.interceptStation || "";
+    const interceptIssues = interceptIssuesByRoute.get(`${complaint.trainNumber || complaint.train || ""}|${station}`) || [];
+    return { rawRow: entry.rawRow, complaint, incident: mapComplaintToIncident(complaint, entry.history, interceptIssues) };
   });
 }
 

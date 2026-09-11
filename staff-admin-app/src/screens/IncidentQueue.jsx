@@ -126,6 +126,10 @@ export default function IncidentQueue() {
       d = d.filter(i => i.recurrenceCount > 1);
     }
 
+    if (queueFilter.interceptOnly) {
+      d = d.filter(i => i.interceptRouting);
+    }
+
     // Coach/Train Filters
     if (queueFilter.coach !== "all") {
       d = d.filter(i => i.coach === queueFilter.coach);
@@ -141,6 +145,8 @@ export default function IncidentQueue() {
         i.id.toLowerCase().includes(q) ||
         i.train?.toLowerCase().includes(q) ||
         i.coach?.toLowerCase().includes(q) ||
+        i.intercept?.station?.toLowerCase().includes(q) ||
+        i.intercept?.interceptStation?.toLowerCase().includes(q) ||
         i.summary?.toLowerCase().includes(q)
       );
     }
@@ -169,20 +175,33 @@ export default function IncidentQueue() {
 
   // Grouping Logic
   const displayRows = useMemo(() => {
-      if (!isAdmin || !isGrouped) return processedIncidents;
+      const interceptGroupCounts = processedIncidents.reduce((map, inc) => {
+          if (!inc.interceptRouting) return map;
+          const station = inc.intercept?.station || inc.intercept?.interceptStation || "intercept";
+          const key = `${inc.train}-${station}`;
+          map[key] = (map[key] || 0) + 1;
+          return map;
+      }, {});
+      const hasMultipleInterceptGroup = Object.values(interceptGroupCounts).some((count) => count > 1);
+      if (!isGrouped && !hasMultipleInterceptGroup) return processedIncidents;
 
-      // Group by Train + Coach + Primary Issue Type
+      // Group by Train + Coach/Intercept + Primary Issue Type
       const groups = {};
       processedIncidents.forEach(inc => {
           const primaryIssue = inc.issueTypes[0] || "unknown";
-          const groupId = `${inc.train}-${inc.coach}-${primaryIssue}`;
+          const location = inc.interceptRouting ? (inc.intercept?.station || inc.intercept?.interceptStation || "intercept") : inc.coach;
+          if (!inc.interceptRouting && !isGrouped) {
+              groups[inc.id] = [inc];
+              return;
+          }
+          const groupId = inc.interceptRouting ? `${inc.train}-${location}` : `${inc.train}-${location}-${primaryIssue}`;
           if (!groups[groupId]) groups[groupId] = [];
           groups[groupId].push(inc);
       });
 
       const rows = [];
       Object.entries(groups).forEach(([groupId, items]) => {
-          if (items.length > 1) {
+          if (items.length > 1 && (items[0].interceptRouting || isGrouped)) {
               const latest = items.sort((a, b) => new Date(b.filedAt) - new Date(a.filedAt))[0];
               rows.push({
                   _isGroup: true,
@@ -190,6 +209,8 @@ export default function IncidentQueue() {
                   count: items.length,
                   train: latest.train,
                   coach: latest.coach,
+                  interceptRouting: latest.interceptRouting,
+                  intercept: latest.intercept,
                   issue: latest.issueTypes[0],
                   severity: latest.severity,
                   summary: `Multiple reports: ${ISSUE_TYPES[latest.issueTypes[0]]?.label || latest.issueTypes[0]}`,
@@ -257,7 +278,7 @@ export default function IncidentQueue() {
       if (preset === "my") setQueueFilter({ search: myAssigneeLabel });
   };
 
-  const clearAllFilters = () => setQueueFilter({ search: "", severity: "all", recurringOnly: false, coach: "all", train: "all", status: "open" });
+  const clearAllFilters = () => setQueueFilter({ search: "", severity: "all", recurringOnly: false, interceptOnly: false, coach: "all", train: "all", status: "open" });
   const closeBrief = () => {
     setFocusedIndex(-1);
     clearSelected();
@@ -303,6 +324,7 @@ export default function IncidentQueue() {
                   <button onClick={() => applyPreset("escalation")} className="text-xs font-semibold bg-red-500/10 text-red-600  border border-red-500/20 px-2.5 py-1 rounded-md whitespace-nowrap hover:bg-red-500/20 transition-colors"><Flame className="w-3 h-3 inline mr-1" />Needs Escalation</button>
                   <button onClick={() => applyPreset("unassigned")} className="text-xs font-semibold bg-amber-500/10 text-amber-600  border border-amber-500/20 px-2.5 py-1 rounded-md whitespace-nowrap hover:bg-amber-500/20 transition-colors">High Sev, Unassigned</button>
                   <button onClick={() => applyPreset("my")} className="text-xs font-semibold bg-blue-500/10 text-blue-600  border border-blue-500/20 px-2.5 py-1 rounded-md whitespace-nowrap hover:bg-blue-500/20 transition-colors">My Assigned</button>
+                  <button onClick={() => setQueueFilter({ interceptOnly: !queueFilter.interceptOnly })} className={cn("text-xs font-semibold border px-2.5 py-1 rounded-md whitespace-nowrap transition-colors", queueFilter.interceptOnly ? "bg-sky-500/20 text-sky-600 border-sky-500/30" : "bg-sky-500/10 text-sky-600 border-sky-500/20 hover:bg-sky-500/20")}>Intercept</button>
               </div>
           )}
 
@@ -325,7 +347,7 @@ export default function IncidentQueue() {
           </div>
           
           {/* Active Filters */}
-          {(queueFilter.coach !== "all" || queueFilter.train !== "all" || queueFilter.status !== "open") && (
+          {(queueFilter.coach !== "all" || queueFilter.train !== "all" || queueFilter.status !== "open" || queueFilter.interceptOnly) && (
             <div className="flex gap-2 text-[11px] font-bold flex-wrap">
               {queueFilter.coach !== "all" && (
                 <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md border border-primary/20">
@@ -343,6 +365,12 @@ export default function IncidentQueue() {
                 <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md border border-primary/20">
                   Status: {queueFilter.status}
                   <button onClick={() => setQueueFilter({ status: "open" })} className="ml-1 opacity-70 hover:opacity-100"><X className="w-3 h-3"/></button>
+                </div>
+              )}
+              {queueFilter.interceptOnly && (
+                <div className="flex items-center gap-1 bg-sky-500/10 text-sky-600 px-2 py-1 rounded-md border border-sky-500/20">
+                  Intercept routed
+                  <button onClick={() => setQueueFilter({ interceptOnly: false })} className="ml-1 opacity-70 hover:opacity-100"><X className="w-3 h-3"/></button>
                 </div>
               )}
               <button onClick={clearAllFilters} className="text-muted-foreground hover:text-foreground underline underline-offset-2 ml-2">Clear all</button>
@@ -434,7 +462,7 @@ export default function IncidentQueue() {
                                 <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", isExpanded && "rotate-90")} />
                                 <Layers className="w-4 h-4 text-primary" />
                                 <div>
-                                    <div className="text-sm font-bold">Train {inc.train} · Coach {inc.coach}</div>
+                                    <div className="text-sm font-bold">Train {inc.train} · {inc.interceptRouting ? `Intercept ${inc.intercept?.station || inc.intercept?.interceptStation || ""}` : `Coach ${inc.coach}`}</div>
                                     <div className="text-xs font-medium text-muted-foreground">{inc.summary}</div>
                                 </div>
                             </div>
@@ -511,6 +539,7 @@ export default function IncidentQueue() {
                         <motion.span layoutId={`id-${inc.id}`} className="font-mono text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">{inc.id}</motion.span>
                         <motion.span layoutId={`badge-${inc.id}`} className={cn("text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border inline-block", SEV_BADGE[inc.severity])}>{inc.severity}</motion.span>
                         {inc.recurrenceCount > 1 && <span className={cn("text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border shadow-sm", SEV_BADGE.recur)}>{inc.recurrenceCount}× RECUR</span>}
+                        {inc.interceptRouting && <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border bg-sky-500/10 text-sky-600 border-sky-500/20">INTERCEPT</span>}
                       </div>
                       <p className="text-sm font-medium leading-snug text-foreground/90 mb-1.5">{inc.summary}</p>
                       
@@ -518,7 +547,9 @@ export default function IncidentQueue() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5">
                           <span className="bg-muted px-1.5 py-0.5 rounded-md border border-border">T {inc.train}</span>
-                          <span className="bg-muted px-1.5 py-0.5 rounded-md border border-border">C {inc.coach}</span>
+                          {inc.interceptRouting
+                            ? <span className="bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-md border border-sky-500/20">{inc.intercept?.station || inc.intercept?.interceptStation || "Intercept"}</span>
+                            : <span className="bg-muted px-1.5 py-0.5 rounded-md border border-border">C {inc.coach}</span>}
                         </span>
                         
                         {/* Assignment marker (TTE emphasis) */}

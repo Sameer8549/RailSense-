@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { Microphone, Keyboard, Camera, ArrowRight, CheckCircle, UploadSimple } from "@phosphor-icons/react";
+import { Microphone, Keyboard, Camera, ArrowRight, CheckCircle, UploadSimple, TrainSimple } from "@phosphor-icons/react";
 import { useI18n } from "../i18n/I18nContext.jsx";
 import { useAppStore } from "../store/appStore.js";
 import { useComplaintFlow } from "../hooks/useComplaintFlow.js";
@@ -23,6 +23,9 @@ export default function FollowUp() {
 
   const [pnrValue, setPnrValue] = useState(draft.pnr || "");
   const [coachValue, setCoachValue] = useState(draft.coach || "");
+  const [utsNumber, setUtsNumber] = useState(draft.utsNumber || "");
+  const [trainValue, setTrainValue] = useState(draft.train || "");
+  const [coachZone, setCoachZone] = useState(draft.coachZone || "");
   const [pnrMode, setPnrMode] = useState(null); // null | speak | type | photo
   const [photoState, setPhotoState] = useState("idle"); // idle | processing | done | error
   const [capturedPhoto, setCapturedPhoto] = useState(null);
@@ -62,13 +65,18 @@ export default function FollowUp() {
   }
 
   function handleConfirm() {
-    updateDraft({ pnr: pnrValue, coach: coachValue, train: ticketFields.trainNumber || draft.train });
+    if (draft.ticketType === "UNRESERVED") {
+      updateDraft({ pnr: "", coach: "", berth: "", train: trainValue, utsNumber, coachZone });
+    } else {
+      updateDraft({ pnr: pnrValue, coach: coachValue, train: ticketFields.trainNumber || draft.train });
+    }
     afterFollowUp();
   }
 
   const pnrReady = !needsPNR() || pnrValue.length === 10;
   const coachReady = !needsCoach() || coachValue.length > 0;
-  const canContinue = pnrReady && coachReady;
+  const unreservedReady = draft.ticketType !== "UNRESERVED" || (/^\d{5}$/.test(trainValue.trim()) && !!coachZone);
+  const canContinue = pnrReady && coachReady && unreservedReady;
 
   return (
     <div style={{
@@ -81,6 +89,86 @@ export default function FollowUp() {
       margin: "0 auto",
       gap: 24,
     }}>
+      {draft.ticketType === "UNRESERVED" && (
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+          style={{ display: "flex", flexDirection: "column", gap: 18 }}
+        >
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 6px" }}>
+              General coach intercept details
+            </h2>
+            <p style={{ fontSize: 15, color: "var(--rs-text-secondary)", margin: 0, lineHeight: 1.5 }}>
+              No PNR is needed. Staff will route this to the next station where the train can be intercepted.
+            </p>
+          </div>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              UTS number, optional
+            </span>
+            <input
+              type="text"
+              className="rs-input"
+              value={utsNumber}
+              onChange={(e) => setUtsNumber(e.target.value.toUpperCase())}
+              placeholder="For reference, if you have it"
+            />
+          </label>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Train number
+            </span>
+            <input
+              inputMode="numeric"
+              type="text"
+              className="rs-input"
+              value={trainValue}
+              onChange={(e) => setTrainValue(e.target.value.replace(/\D/g, "").slice(0, 5))}
+              placeholder="5-digit train number"
+              style={{ fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700 }}
+            />
+          </label>
+
+          <div>
+            <span style={{ display: "block", fontSize: 12, color: "var(--rs-text-tertiary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+              Where are you in the general coach?
+            </span>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+              {["Front", "Middle", "Back"].map((zone) => (
+                <motion.button
+                  key={zone}
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setCoachZone(zone)}
+                  style={{
+                    minHeight: 74,
+                    border: coachZone === zone ? "2px solid var(--rs-blue)" : "2px solid var(--rs-border)",
+                    background: coachZone === zone ? "var(--rs-blue-light)" : "var(--rs-surface-card)",
+                    borderRadius: "var(--rs-radius-md)",
+                    color: coachZone === zone ? "var(--rs-blue)" : "var(--rs-text-primary)",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <TrainSimple size={22} weight="bold" />
+                  {zone}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+      )}
+
       {/* PNR section */}
       {needsPNR() && (
         <motion.section
